@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import Index from "./pages/Index";
 import Group from "./pages/Group";
+import GroupChat from "./pages/GroupChat";
 import Archive from "./pages/Archive";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/group" element={<Group />} />
+            <Route path="/group/:id" element={<GroupChat />} />
             <Route path="/archive" element={<Archive />} />
             <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

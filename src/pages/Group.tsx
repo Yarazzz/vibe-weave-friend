@@ -1,6 +1,7 @@
-import { MessageCircle, Users, Plus } from "lucide-react";
+import { MessageCircle, Users, Plus, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 const groups = [
   {
@@ -30,6 +31,8 @@ const groups = [
 ];
 
 const Group = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-20">
       {/* Header */}
@@ -51,6 +54,7 @@ const Group = () => {
           {groups.map((group, index) => (
             <Card
               key={group.id}
+              onClick={() => navigate(`/group/${group.id}`)}
               className="p-4 hover:shadow-elevated transition-all duration-300 cursor-pointer animate-slide-up border-border/50"
               style={{ animationDelay: `${index * 100}ms` }}
             >
@@ -71,9 +75,12 @@ const Group = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold truncate">{group.name}</h3>
-                    <span className="text-xs text-muted-foreground">
-                      {group.time}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {group.time}
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-2 mb-2">
