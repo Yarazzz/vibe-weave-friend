@@ -20,6 +20,8 @@ interface AdminConfig {
   forcedApiKey?: string;
   forcedApiEndpoint?: string;
   forcedModel?: string;
+  useLocalProgram: boolean;
+  localProgramUrl?: string;
 }
 
 const menuItems = [
@@ -60,6 +62,7 @@ const Profile = () => {
 
   const [adminConfig, setAdminConfig] = useState<AdminConfig>({
     forceApi: false,
+    useLocalProgram: false,
   });
 
   // Load configs from localStorage on mount
@@ -97,6 +100,13 @@ const Profile = () => {
     setAdminConfig(prev => ({
       ...prev,
       forceApi: checked,
+    }));
+  };
+
+  const handleToggleLocalProgram = (checked: boolean) => {
+    setAdminConfig(prev => ({
+      ...prev,
+      useLocalProgram: checked,
     }));
   };
 
@@ -321,6 +331,36 @@ const Profile = () => {
                     </div>
                   </>
                 )}
+
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="space-y-0.5">
+                      <Label>使用本地程序接口</Label>
+                      <p className="text-xs text-muted-foreground">
+                        调用机器上的本地程序处理AI请求
+                      </p>
+                    </div>
+                    <Switch
+                      checked={adminConfig.useLocalProgram}
+                      onCheckedChange={handleToggleLocalProgram}
+                    />
+                  </div>
+                  
+                  {adminConfig.useLocalProgram && (
+                    <div className="space-y-2">
+                      <Label htmlFor="localProgramUrl">本地程序URL</Label>
+                      <Input
+                        id="localProgramUrl"
+                        value={adminConfig.localProgramUrl || ""}
+                        onChange={(e) => setAdminConfig(prev => ({ ...prev, localProgramUrl: e.target.value }))}
+                        placeholder="http://localhost:8080/api/chat"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        输入本地程序的完整URL地址
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setIsAdminDialogOpen(false)}>
