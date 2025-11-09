@@ -1,7 +1,26 @@
-import { Settings, Bell, Shield, HelpCircle, LogOut, ChevronRight, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Bell, Shield, HelpCircle, LogOut, ChevronRight, User, Cpu, Eye, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+
+interface ApiConfig {
+  apiKey: string;
+  apiEndpoint: string;
+  model: string;
+}
+
+interface AdminConfig {
+  forceApi: boolean;
+  forcedApiKey?: string;
+  forcedApiEndpoint?: string;
+  forcedModel?: string;
+}
 
 const menuItems = [
   {
@@ -27,6 +46,60 @@ const menuItems = [
 ];
 
 const Profile = () => {
+  const { toast } = useToast();
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false);
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showAdminApiKey, setShowAdminApiKey] = useState(false);
+
+  const [apiConfig, setApiConfig] = useState<ApiConfig>({
+    apiKey: "",
+    apiEndpoint: "https://api.openai.com/v1/chat/completions",
+    model: "gpt-3.5-turbo",
+  });
+
+  const [adminConfig, setAdminConfig] = useState<AdminConfig>({
+    forceApi: false,
+  });
+
+  // Load configs from localStorage on mount
+  useEffect(() => {
+    const savedApiConfig = localStorage.getItem("userApiConfig");
+    const savedAdminConfig = localStorage.getItem("adminConfig");
+    
+    if (savedApiConfig) {
+      setApiConfig(JSON.parse(savedApiConfig));
+    }
+    if (savedAdminConfig) {
+      setAdminConfig(JSON.parse(savedAdminConfig));
+    }
+  }, []);
+
+  const handleSaveApiConfig = () => {
+    localStorage.setItem("userApiConfig", JSON.stringify(apiConfig));
+    setIsApiDialogOpen(false);
+    toast({
+      title: "保存成功",
+      description: "AI API 配置已保存",
+    });
+  };
+
+  const handleSaveAdminConfig = () => {
+    localStorage.setItem("adminConfig", JSON.stringify(adminConfig));
+    setIsAdminDialogOpen(false);
+    toast({
+      title: "管理员设置已更新",
+      description: adminConfig.forceApi ? "已强制指定 API 配置" : "用户可自定义 API 配置",
+    });
+  };
+
+  const handleToggleForceApi = (checked: boolean) => {
+    setAdminConfig(prev => ({
+      ...prev,
+      forceApi: checked,
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-20">
       {/* Header */}
@@ -84,6 +157,181 @@ const Profile = () => {
               <div className="text-xs text-muted-foreground">成长记录</div>
             </Card>
           </div>
+
+          {/* AI API Configuration - Only show if not forced by admin */}
+          {!adminConfig.forceApi && (
+            <Dialog open={isApiDialogOpen} onOpenChange={setIsApiDialogOpen}>
+              <DialogTrigger asChild>
+                <Card className="p-4 hover:shadow-elevated transition-all duration-300 cursor-pointer animate-slide-up" style={{ animationDelay: "150ms" }}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                      <Cpu className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold mb-0.5">AI API 配置</h3>
+                      <p className="text-xs text-muted-foreground">
+                        配置你的 AI 接口信息
+                      </p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </Card>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>AI API 配置</DialogTitle>
+                  <DialogDescription>
+                    输入你的 AI 接口信息以使用自定义 AI 服务
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="apiKey">API Key</Label>
+                    <div className="relative">
+                      <Input
+                        id="apiKey"
+                        type={showApiKey ? "text" : "password"}
+                        value={apiConfig.apiKey}
+                        onChange={(e) => setApiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
+                        placeholder="sk-..."
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                      >
+                        {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="apiEndpoint">API Endpoint</Label>
+                    <Input
+                      id="apiEndpoint"
+                      value={apiConfig.apiEndpoint}
+                      onChange={(e) => setApiConfig(prev => ({ ...prev, apiEndpoint: e.target.value }))}
+                      placeholder="https://api.openai.com/v1/chat/completions"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="model">模型</Label>
+                    <Input
+                      id="model"
+                      value={apiConfig.model}
+                      onChange={(e) => setApiConfig(prev => ({ ...prev, model: e.target.value }))}
+                      placeholder="gpt-3.5-turbo"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setIsApiDialogOpen(false)}>
+                    取消
+                  </Button>
+                  <Button onClick={handleSaveApiConfig}>
+                    保存配置
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Admin Configuration */}
+          <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
+            <DialogTrigger asChild>
+              <Card className="p-4 hover:shadow-elevated transition-all duration-300 cursor-pointer animate-slide-up border-amber-500/20" style={{ animationDelay: "175ms" }}>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/10 flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-0.5">管理员设置</h3>
+                    <p className="text-xs text-muted-foreground">
+                      强制 API 配置和后台设置
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </div>
+              </Card>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>管理员设置</DialogTitle>
+                <DialogDescription>
+                  配置系统级 API 设置，强制所有用户使用指定的 API
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>强制指定 API</Label>
+                    <p className="text-xs text-muted-foreground">
+                      开启后，用户无法自定义 API 配置
+                    </p>
+                  </div>
+                  <Switch
+                    checked={adminConfig.forceApi}
+                    onCheckedChange={handleToggleForceApi}
+                  />
+                </div>
+                
+                {adminConfig.forceApi && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminApiKey">强制 API Key</Label>
+                      <div className="relative">
+                        <Input
+                          id="adminApiKey"
+                          type={showAdminApiKey ? "text" : "password"}
+                          value={adminConfig.forcedApiKey || ""}
+                          onChange={(e) => setAdminConfig(prev => ({ ...prev, forcedApiKey: e.target.value }))}
+                          placeholder="sk-..."
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full"
+                          onClick={() => setShowAdminApiKey(!showAdminApiKey)}
+                        >
+                          {showAdminApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminApiEndpoint">强制 API Endpoint</Label>
+                      <Input
+                        id="adminApiEndpoint"
+                        value={adminConfig.forcedApiEndpoint || ""}
+                        onChange={(e) => setAdminConfig(prev => ({ ...prev, forcedApiEndpoint: e.target.value }))}
+                        placeholder="https://api.openai.com/v1/chat/completions"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminModel">强制模型</Label>
+                      <Input
+                        id="adminModel"
+                        value={adminConfig.forcedModel || ""}
+                        onChange={(e) => setAdminConfig(prev => ({ ...prev, forcedModel: e.target.value }))}
+                        placeholder="gpt-3.5-turbo"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setIsAdminDialogOpen(false)}>
+                  取消
+                </Button>
+                <Button onClick={handleSaveAdminConfig}>
+                  保存设置
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Menu Items */}
           <div className="space-y-2 animate-slide-up" style={{ animationDelay: "200ms" }}>
